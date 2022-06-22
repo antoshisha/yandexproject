@@ -7,6 +7,8 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.ToString;
 import org.hibernate.annotations.DynamicUpdate;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
 import javax.persistence.*;
 import java.util.ArrayList;
@@ -16,7 +18,7 @@ import java.util.List;
 //@Getter
 @Data
 @Entity
-@ToString
+//@ToString
 @Table(name = "shop_unit")
 //@DynamicUpdate
 public class ShopUnit {
@@ -30,10 +32,10 @@ public class ShopUnit {
     @Column(name = "lastUpdated")
     private Date updateDate;
 
-//    @JsonBackReference
+    //    @JsonBackReference
     @ManyToOne(cascade = {CascadeType.PERSIST})
     @JoinColumn(name = "FK_PARENT_ID")
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+//    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private ShopUnit parentId;
 
 //    private String parentId;
@@ -44,7 +46,8 @@ public class ShopUnit {
     @Column(name = "price")
     private Integer price;
 
-//    @JsonManagedReference
+    //    @JsonManagedReference
+//    @Fetch(FetchMode.JOIN)
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "parentId")
 //    @JoinColumn(name = "parentUid")
 //    private List<ShopUnit> children = type == ShopUnitType.OFFER ? null : new ArrayList<>();
@@ -57,16 +60,45 @@ public class ShopUnit {
     public ShopUnit(String id) {
         this.id = id;
     }
-//
-//    public ShopUnit(String id, String name, Date updateDate, ShopUnit parentId, ShopUnitType type, Integer price, List<ShopUnit> children) {
-//        this.id = id;
-//        this.name = name;
-//        this.updateDate = updateDate;
-//        this.parentId = parentId;
-//        this.type = type;
-//        this.price = price;
-//        this.children = children;
-//    }
+
+    @PrePersist
+    @PreUpdate
+    public void processAveragePrice(){
+        if (this.getType() == ShopUnitType.CATEGORY) {
+            List<Integer> prices = new ArrayList<>();
+            System.out.println("CATEGORY: " + this.getName());
+            if (this.getChildren() != null && !this.getChildren().isEmpty()){
+                for (ShopUnit x :  this.getChildren()) {
+                    if (x.getPrice() != null) {
+                        prices.add(x.getPrice());
+                    }
+                }
+            }
+            int sum = 0;
+            for (Integer i: prices) {
+                sum+=i;
+            }
+            if (!prices.isEmpty()){
+                int avg = (int) prices.stream().mapToInt(x -> x).average().orElse(0);
+                this.setPrice(avg);
+            }
+
+        } else {
+            this.setChildren(null);
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "ShopUnit{" +
+                "id='" + id + '\'' +
+                ", name='" + name + '\'' +
+                ", updateDate=" + updateDate +
+                ", type=" + type +
+                ", price=" + price +
+                ", children=" + children +
+                '}';
+    }
 
     public enum ShopUnitType {
         OFFER, CATEGORY;

@@ -17,7 +17,7 @@ public class ShopUnitController {
 
     @PostMapping("/imports")
     public ResponseEntity importUnit(@RequestBody ShopUnitImportRequestDTO shopUnitImportRequestDTO) {
-        shopUnitImportRequestDTO.getItems().forEach(System.out::println);
+//        shopUnitImportRequestDTO.getItems().forEach(System.out::println);
         shopUnitService.importUnit(shopUnitImportRequestDTO);
         return new ResponseEntity(HttpStatus.OK);
     }
@@ -33,6 +33,9 @@ public class ShopUnitController {
         ShopUnit node = shopUnitService.getNode(id);
         return new ResponseEntity<>(node, HttpStatus.OK);
     }
+
+//    @GetMapping("/sales")
+//    public ResponseE
 
 //    public ShopUnit setChildrenToNull(ShopUnit shopUnit) {
 //        if (shopUnit.getChildren().isEmpty()) {

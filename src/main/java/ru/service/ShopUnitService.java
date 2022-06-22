@@ -23,7 +23,7 @@ public class ShopUnitService {
     @Autowired
     DTOConverter dtoConverter;
 
-    @Transactional
+//    @Transactional
     public void importUnit(ShopUnitImportRequestDTO shopUnitImportRequestDTO) {
         List<ShopUnitImportDTO> shopUnitImportDTOList = shopUnitImportRequestDTO.getItems();
         if (!shopUnitImportDTOList.isEmpty()) {
@@ -36,10 +36,8 @@ public class ShopUnitService {
                         log.error("ShopUnitVerifyException in import unit");
                         throw new ShopUnitVerifyException("Validation Failed");
                     }
-                } else {
-                    updateNode(unitForImport);
                 }
-
+                updateNode(unitForImport);
             }
         }
 
@@ -68,23 +66,28 @@ public class ShopUnitService {
         if (shopUnit == null) {
             throw new ShopUnitNotFoundException("Item not found");
         }
-        return processNodeForResponse(shopUnit);
+//        return processNodeForResponse(shopUnit);
+        return shopUnit;
     }
 
-    private  void updateNode(ShopUnit unitForImport) {
+//    @Transactional
+    public void updateNode(ShopUnit unitForImport) {
         if (unitForImport.getParentId() != null) {
             ShopUnit parentShopUnit = shopUnitRepository.findById(unitForImport.getParentId().getId());
             if (parentShopUnit == null) {
-                throw new ShopUnitVerifyException("Validation Failed! Parent not found!");
+                throw new ShopUnitVerifyException("Validation Failed!");
             }
             if (parentShopUnit.getType() != ShopUnit.ShopUnitType.CATEGORY) {
-                throw new ShopUnitVerifyException("Validation Failed! Parent of item can be only Category type!");
+                throw new ShopUnitVerifyException("Validation Failed!");
             }
             List<ShopUnit> childrens = parentShopUnit.getChildren();
             parentShopUnit.setUpdateDate(new Date());
-            childrens.add(unitForImport);
+            if (!childrens.contains(unitForImport)) {
+                childrens.add(unitForImport);
+            }
             parentShopUnit.setChildren(childrens);
             shopUnitRepository.save(parentShopUnit);
+//            shopUnitRepository.flush();
             if (parentShopUnit.getParentId() != null) {
                 updateNode(parentShopUnit);
             }
@@ -139,8 +142,8 @@ public class ShopUnitService {
             shopUnit.getChildren().forEach(this::processNodeForResponse);
         }
         if (shopUnit.getType() == ShopUnit.ShopUnitType.CATEGORY) {
-            Integer totalPrice = (int)shopUnit.getChildren().stream().mapToInt(ShopUnit::getPrice).average().getAsDouble();
-            shopUnit.setPrice(totalPrice);
+            Integer avgPrice = (int) shopUnit.getChildren().stream().mapToInt(ShopUnit::getPrice).average().getAsDouble();
+            shopUnit.setPrice(avgPrice);
         }
         return shopUnit;
     }
