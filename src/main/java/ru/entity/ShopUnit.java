@@ -16,7 +16,7 @@ import java.util.Date;
 import java.util.List;
 
 //@Getter
-@Data
+//@Data
 @Entity
 //@ToString
 @Table(name = "shop_unit")
@@ -32,7 +32,7 @@ public class ShopUnit {
     @Column(name = "lastUpdated")
     private Date updateDate;
 
-    //    @JsonBackReference
+    @JsonBackReference
     @ManyToOne(cascade = {CascadeType.PERSIST})
     @JoinColumn(name = "FK_PARENT_ID")
 //    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
@@ -46,9 +46,9 @@ public class ShopUnit {
     @Column(name = "price")
     private Integer price;
 
-    //    @JsonManagedReference
+    @JsonManagedReference
 //    @Fetch(FetchMode.JOIN)
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "parentId")
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "parentId", fetch = FetchType.EAGER)
 //    @JoinColumn(name = "parentUid")
 //    private List<ShopUnit> children = type == ShopUnitType.OFFER ? null : new ArrayList<>();
     private List<ShopUnit> children = new ArrayList<>();
@@ -61,32 +61,38 @@ public class ShopUnit {
         this.id = id;
     }
 
-    @PrePersist
-    @PreUpdate
-    public void processAveragePrice(){
-        if (this.getType() == ShopUnitType.CATEGORY) {
-            List<Integer> prices = new ArrayList<>();
-            System.out.println("CATEGORY: " + this.getName());
-            if (this.getChildren() != null && !this.getChildren().isEmpty()){
-                for (ShopUnit x :  this.getChildren()) {
-                    if (x.getPrice() != null) {
-                        prices.add(x.getPrice());
-                    }
-                }
-            }
-            int sum = 0;
-            for (Integer i: prices) {
-                sum+=i;
-            }
-            if (!prices.isEmpty()){
-                int avg = (int) prices.stream().mapToInt(x -> x).average().orElse(0);
-                this.setPrice(avg);
-            }
-
-        } else {
-            this.setChildren(null);
-        }
-    }
+//    @PrePersist
+//    @PreUpdate
+//    @PostPersist
+//    @PostUpdate
+//    public void processAveragePrice() {
+//
+//        if (this.getType() == ShopUnitType.CATEGORY) {
+//            List<Integer> prices = new ArrayList<>();
+//            System.out.println("CATEGORY: " + this.getName());
+//            if (this.getChildren() != null && !this.getChildren().isEmpty()) {
+//                for (ShopUnit x : this.getChildren()) {
+//                    System.out.println("CHILD: " + x.getName() + "PRICE: " + x.getPrice());
+//                    System.out.println("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
+//                    if (x.getPrice() != null) {
+//                        prices.add(x.getPrice());
+//                    }
+//                }
+//            }
+//            int sum = 0;
+//            for (Integer i : prices) {
+//                sum += i;
+//            }
+//            if (!prices.isEmpty()) {
+//                int avg = (int) prices.stream().mapToInt(x -> x).average().orElse(0);
+//                System.out.println("AVG IS: " + avg);
+//                this.setPrice(avg);
+//            }
+//        } else {
+//            this.setChildren(null);
+//        }
+//    }
+//
 
     @Override
     public String toString() {
@@ -104,4 +110,74 @@ public class ShopUnit {
         OFFER, CATEGORY;
     }
 
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Date getUpdateDate() {
+        return updateDate;
+    }
+
+    public void setUpdateDate(Date updateDate) {
+        this.updateDate = updateDate;
+    }
+
+    public ShopUnit getParentId() {
+        return parentId;
+    }
+
+    public void setParentId(ShopUnit parentId) {
+        this.parentId = parentId;
+    }
+
+    public ShopUnitType getType() {
+        return type;
+    }
+
+    public void setType(ShopUnitType type) {
+        this.type = type;
+    }
+
+    public Integer getPrice() {
+        if (type == ShopUnitType.CATEGORY && !children.isEmpty()) {
+            List<Integer> priceList = new ArrayList<>();
+            for (ShopUnit unit : children) {
+                if (unit.getPrice() != null) priceList.add(unit.getPrice());
+            }
+            return (int)priceList.stream().mapToInt(x->x).average().getAsDouble();
+        }
+        return price;
+    }
+
+    public void setPrice(Integer price) {
+//        if (type == ShopUnitType.CATEGORY && !children.isEmpty()) {
+//            this.price =  (int)children.stream().mapToInt(ShopUnit::getPrice).average().getAsDouble();
+//            System.out.println("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
+//        } else {
+            this.price = price;
+//        }
+    }
+
+    public List<ShopUnit> getChildren() {
+        if (type == ShopUnitType.OFFER){
+            return null;
+        }
+        return children;
+    }
+
+    public void setChildren(List<ShopUnit> children) {
+        this.children = children;
+    }
 }

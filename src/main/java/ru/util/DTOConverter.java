@@ -4,7 +4,9 @@ import org.springframework.stereotype.Component;
 import ru.dto.ShopUnitImportDTO;
 import ru.entity.ShopUnit;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 @Component
 public class DTOConverter {
@@ -18,5 +20,11 @@ public class DTOConverter {
         unit.setType(unitImportDTO.getType());
         unit.setPrice(unitImportDTO.getPrice());
         return unit;
+    }
+
+    public List<ShopUnit> convertShopUnitImportDTOsToShopUnitList(List<ShopUnitImportDTO> shopUnitImportDTOList) {
+        List<ShopUnit> shopUnits = new ArrayList<>();
+        shopUnitImportDTOList.forEach(x -> shopUnits.add(convertShopUnitImportDTOToShopUnit(x)));
+        return shopUnits;
     }
 }

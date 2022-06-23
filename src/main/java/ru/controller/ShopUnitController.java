@@ -5,8 +5,18 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.dto.ShopUnitImportRequestDTO;
+import ru.entity.LogEventEntity;
 import ru.entity.ShopUnit;
+import ru.repository.LogEventRepository;
+import ru.service.LogEventService;
 import ru.service.ShopUnitService;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 
 @RestController
@@ -14,11 +24,15 @@ public class ShopUnitController {
 
     @Autowired
     ShopUnitService shopUnitService;
+    @Autowired
+    LogEventService logEventService;
+    @Autowired
+    LogEventRepository logEventRepository;
 
     @PostMapping("/imports")
     public ResponseEntity importUnit(@RequestBody ShopUnitImportRequestDTO shopUnitImportRequestDTO) {
 //        shopUnitImportRequestDTO.getItems().forEach(System.out::println);
-        shopUnitService.importUnit(shopUnitImportRequestDTO);
+        shopUnitService.importUnits(shopUnitImportRequestDTO);
         return new ResponseEntity(HttpStatus.OK);
     }
 
@@ -34,21 +48,19 @@ public class ShopUnitController {
         return new ResponseEntity<>(node, HttpStatus.OK);
     }
 
-//    @GetMapping("/sales")
-//    public ResponseE
+    @GetMapping("/node/{id}/statistic")
+    public ResponseEntity< List<LogEventEntity>> getStatistics(@PathVariable String id,
+                                                        @RequestParam String dateStart,
+                                                        @RequestParam String dateEnd) throws ParseException {
+        List<LogEventEntity> logEventEntityList;
+        OffsetDateTime start = OffsetDateTime.parse(dateStart);
+        OffsetDateTime end = OffsetDateTime.parse(dateEnd);
+        logEventEntityList = logEventService.getLogEventsForShopUnitBetween(id, new Date(start.toInstant().toEpochMilli()), new Date(end.toInstant().toEpochMilli()));
+        return new ResponseEntity<>(logEventEntityList, HttpStatus.OK);
+    }
 
-//    public ShopUnit setChildrenToNull(ShopUnit shopUnit) {
-//        if (shopUnit.getChildren().isEmpty()) {
-//            if (shopUnit.getType() == ShopUnit.ShopUnitType.OFFER) {
-//                shopUnit.setChildren(null);
-//            }
-//        } else {
-//            shopUnit.getChildren().forEach(this::setChildrenToNull);
-//        }
-//        if (shopUnit.getType() == ShopUnit.ShopUnitType.CATEGORY) {
-//            Integer totalPrice = (int)shopUnit.getChildren().stream().mapToInt(ShopUnit::getPrice).average().getAsDouble();
-//            shopUnit.setPrice(totalPrice);
-//        }
-//        return shopUnit;
-//    }
+    @GetMapping("/allStat")
+    public List<LogEventEntity> getAllStat(){
+        return logEventRepository.findAll();
+    }
 }

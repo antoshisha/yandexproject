@@ -16,7 +16,7 @@ public class LogEventService {
     LogEventRepository logEventRepository;
 
     @Transactional
-    public void logCreateChangePriceEvent(String shopUnitId, LogEventEntity.LogEventType logEventType, Integer price) {
+    public void createLogChangePriceEvent(String shopUnitId, LogEventEntity.LogEventType logEventType, Integer price) {
         LogEventEntity logEvents = new LogEventEntity();
         logEvents.setShopUnitId(shopUnitId);
         logEvents.setLogEventType(logEventType);

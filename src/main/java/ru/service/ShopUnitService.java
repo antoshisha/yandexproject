@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.dto.ShopUnitImportDTO;
 import ru.dto.ShopUnitImportRequestDTO;
+import ru.entity.LogEventEntity;
 import ru.entity.ShopUnit;
 import ru.exception.ShopUnitNotFoundException;
 import ru.exception.ShopUnitVerifyException;
@@ -22,22 +23,25 @@ public class ShopUnitService {
     ShopUnitRepository shopUnitRepository;
     @Autowired
     DTOConverter dtoConverter;
+    @Autowired
+    LogEventService logEventService;
 
-//    @Transactional
-    public void importUnit(ShopUnitImportRequestDTO shopUnitImportRequestDTO) {
+    //    @Transactional
+    public void importUnits(ShopUnitImportRequestDTO shopUnitImportRequestDTO) {
         List<ShopUnitImportDTO> shopUnitImportDTOList = shopUnitImportRequestDTO.getItems();
         if (!shopUnitImportDTOList.isEmpty()) {
             validateShopUnits(shopUnitImportDTOList);
-            for (int i = 0; i < shopUnitImportDTOList.size(); i++) {
-                ShopUnit unitForImport = dtoConverter.convertShopUnitImportDTOToShopUnit(shopUnitImportDTOList.get(i));
-                Optional<ShopUnit> unit = Optional.ofNullable(shopUnitRepository.findById(unitForImport.getId()));
-                if (unit.isPresent() && unit.get().getType() != null) {
-                    if (unit.get().getType() != unitForImport.getType()) {
-                        log.error("ShopUnitVerifyException in import unit");
-                        throw new ShopUnitVerifyException("Validation Failed");
-                    }
-                }
-                updateNode(unitForImport);
+            List<ShopUnit> units = dtoConverter.convertShopUnitImportDTOsToShopUnitList(shopUnitImportDTOList);
+            for (int i = 0; i < units.size(); i++) {
+//                ShopUnit unitForImport = dtoConverter.convertShopUnitImportDTOToShopUnit(shopUnitImportDTOList.get(i));
+//                Optional<ShopUnit> unit = Optional.ofNullable(shopUnitRepository.findById(unitForImport.getId()));
+//                if (unit.isPresent() && unit.get().getType() != null) {
+//                    if (unit.get().getType() != unitForImport.getType()) {
+//                        log.error("ShopUnitVerifyException in import unit");
+//                        throw new ShopUnitVerifyException("Validation Failed");
+//                    }
+//                }
+                updateNode(units.get(i));
             }
         }
 
@@ -70,28 +74,33 @@ public class ShopUnitService {
         return shopUnit;
     }
 
-//    @Transactional
+    @Transactional
     public void updateNode(ShopUnit unitForImport) {
+        Optional<ShopUnit> unit = Optional.ofNullable(shopUnitRepository.findById(unitForImport.getId()));
+        if (unit.isPresent() && unit.get().getType() != null) {
+            if (unit.get().getType() != unitForImport.getType()) {
+                log.error("ShopUnitVerifyException in import unit");
+                throw new ShopUnitVerifyException("Validation Failed");
+            }
+            if (unit.get().getPrice() != unitForImport.getPrice() && unitForImport.getPrice() != null) {
+                logEventService.createLogChangePriceEvent(unitForImport.getId(), LogEventEntity.LogEventType.PRICE_UPDATE, unitForImport.getPrice());
+            }
+        }
         if (unitForImport.getParentId() != null) {
             ShopUnit parentShopUnit = shopUnitRepository.findById(unitForImport.getParentId().getId());
-            if (parentShopUnit == null) {
+            if (parentShopUnit == null || parentShopUnit.getType() != ShopUnit.ShopUnitType.CATEGORY) {
                 throw new ShopUnitVerifyException("Validation Failed!");
             }
-            if (parentShopUnit.getType() != ShopUnit.ShopUnitType.CATEGORY) {
-                throw new ShopUnitVerifyException("Validation Failed!");
-            }
-            List<ShopUnit> childrens = parentShopUnit.getChildren();
             parentShopUnit.setUpdateDate(new Date());
-            if (!childrens.contains(unitForImport)) {
-                childrens.add(unitForImport);
+            if (unit.isPresent() && unit.get().getPrice() != unitForImport.getPrice()) {
+                logEventService.createLogChangePriceEvent(parentShopUnit.getId(), LogEventEntity.LogEventType.PRICE_UPDATE, parentShopUnit.getPrice());
             }
-            parentShopUnit.setChildren(childrens);
             shopUnitRepository.save(parentShopUnit);
-//            shopUnitRepository.flush();
             if (parentShopUnit.getParentId() != null) {
                 updateNode(parentShopUnit);
             }
         }
+
         shopUnitRepository.save(unitForImport);
     }
 
