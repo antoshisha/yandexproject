@@ -5,17 +5,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.dto.ShopUnitImportRequestDTO;
+import ru.dto.ShopUnitStatisticResponseDTO;
 import ru.entity.LogEventEntity;
 import ru.entity.ShopUnit;
+import ru.exception.ShopUnitVerifyException;
 import ru.repository.LogEventRepository;
 import ru.service.LogEventService;
 import ru.service.ShopUnitService;
 
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 
@@ -31,7 +30,6 @@ public class ShopUnitController {
 
     @PostMapping("/imports")
     public ResponseEntity importUnit(@RequestBody ShopUnitImportRequestDTO shopUnitImportRequestDTO) {
-//        shopUnitImportRequestDTO.getItems().forEach(System.out::println);
         shopUnitService.importUnits(shopUnitImportRequestDTO);
         return new ResponseEntity(HttpStatus.OK);
     }
@@ -49,14 +47,29 @@ public class ShopUnitController {
     }
 
     @GetMapping("/node/{id}/statistic")
-    public ResponseEntity< List<LogEventEntity>> getStatistics(@PathVariable String id,
-                                                        @RequestParam String dateStart,
-                                                        @RequestParam String dateEnd) throws ParseException {
-        List<LogEventEntity> logEventEntityList;
-        OffsetDateTime start = OffsetDateTime.parse(dateStart);
-        OffsetDateTime end = OffsetDateTime.parse(dateEnd);
-        logEventEntityList = logEventService.getLogEventsForShopUnitBetween(id, new Date(start.toInstant().toEpochMilli()), new Date(end.toInstant().toEpochMilli()));
-        return new ResponseEntity<>(logEventEntityList, HttpStatus.OK);
+    public ResponseEntity<ShopUnitStatisticResponseDTO> getStatistics(@PathVariable String id,
+                                                               @RequestParam(required = false) String dateStart,
+                                                               @RequestParam(required = false) String dateEnd) throws ParseException {
+        ShopUnitStatisticResponseDTO responseDTO;
+        if (dateStart != null && dateEnd != null){
+            OffsetDateTime start = OffsetDateTime.parse(dateStart);
+            OffsetDateTime end = OffsetDateTime.parse(dateEnd);
+            responseDTO = shopUnitService.getStatisticForNodeByPeriod(id, start, end);
+        } else {
+            responseDTO = shopUnitService.getAllStatisticForNode(id);
+        }
+        return new ResponseEntity<>(responseDTO, HttpStatus.OK);
+    }
+
+    @GetMapping("/sales")
+    public ResponseEntity<ShopUnitStatisticResponseDTO> getUpdatedNodesInThe24Hours(@RequestParam String date) {
+        if (date != null) {
+            OffsetDateTime dateTime = OffsetDateTime.parse(date);
+            ShopUnitStatisticResponseDTO responseDTO = shopUnitService.getUpdatedNodesInThe24Hours(dateTime);
+            return new ResponseEntity<>(responseDTO, HttpStatus.OK);
+        } else {
+            throw new ShopUnitVerifyException("Validation Failed!");
+        }
     }
 
     @GetMapping("/allStat")

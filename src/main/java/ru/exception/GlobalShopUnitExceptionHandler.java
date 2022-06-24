@@ -5,6 +5,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import java.time.format.DateTimeParseException;
+
 @ControllerAdvice
 public class GlobalShopUnitExceptionHandler {
 
@@ -13,6 +15,14 @@ public class GlobalShopUnitExceptionHandler {
         Error errorMessage = new Error();
         errorMessage.setCode(400);
         errorMessage.setMessage(exception.getMessage());
+        return new ResponseEntity<>(errorMessage, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<Error> handleException(DateTimeParseException exception) {
+        Error errorMessage = new Error();
+        errorMessage.setCode(400);
+        errorMessage.setMessage("Validation failed!");
         return new ResponseEntity<>(errorMessage, HttpStatus.BAD_REQUEST);
     }
 

@@ -4,6 +4,7 @@ import lombok.Data;
 import lombok.ToString;
 
 import javax.persistence.*;
+import java.time.OffsetDateTime;
 import java.util.Date;
 
 @Data
@@ -16,9 +17,13 @@ public class LogEventEntity {
     @Column(name = "id", nullable = false)
     private Long id;
     private String shopUnitId;
+    private String name;
+    private String parentId;
+    private ShopUnit.ShopUnitType type;
+    private Integer price;
     private LogEventType logEventType;
-    private Date creationDate;
-    private String updatedField;
+    private OffsetDateTime creationDate;
+
 
     public enum LogEventType {
         PRICE_UPDATE, NAME_UPDATE

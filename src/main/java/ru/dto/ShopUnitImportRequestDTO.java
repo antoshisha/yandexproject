@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
-import java.util.Date;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Getter
@@ -12,5 +12,6 @@ import java.util.List;
 @ToString
 public class ShopUnitImportRequestDTO {
     private List<ShopUnitImportDTO> items;
-    private Date updateDate;
+    private OffsetDateTime updateDate;
+
 }

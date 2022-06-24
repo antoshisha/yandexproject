@@ -11,6 +11,7 @@ import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
 import javax.persistence.*;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -30,10 +31,11 @@ public class ShopUnit {
     private String name;
 
     @Column(name = "lastUpdated")
-    private Date updateDate;
+    private OffsetDateTime updateDate;
 
     @JsonBackReference
     @ManyToOne(cascade = {CascadeType.PERSIST})
+//    @ManyToOne()
     @JoinColumn(name = "FK_PARENT_ID")
 //    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private ShopUnit parentId;
@@ -48,7 +50,7 @@ public class ShopUnit {
 
     @JsonManagedReference
 //    @Fetch(FetchMode.JOIN)
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "parentId", fetch = FetchType.EAGER)
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "parentId", orphanRemoval = true)
 //    @JoinColumn(name = "parentUid")
 //    private List<ShopUnit> children = type == ShopUnitType.OFFER ? null : new ArrayList<>();
     private List<ShopUnit> children = new ArrayList<>();
@@ -61,38 +63,6 @@ public class ShopUnit {
         this.id = id;
     }
 
-//    @PrePersist
-//    @PreUpdate
-//    @PostPersist
-//    @PostUpdate
-//    public void processAveragePrice() {
-//
-//        if (this.getType() == ShopUnitType.CATEGORY) {
-//            List<Integer> prices = new ArrayList<>();
-//            System.out.println("CATEGORY: " + this.getName());
-//            if (this.getChildren() != null && !this.getChildren().isEmpty()) {
-//                for (ShopUnit x : this.getChildren()) {
-//                    System.out.println("CHILD: " + x.getName() + "PRICE: " + x.getPrice());
-//                    System.out.println("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
-//                    if (x.getPrice() != null) {
-//                        prices.add(x.getPrice());
-//                    }
-//                }
-//            }
-//            int sum = 0;
-//            for (Integer i : prices) {
-//                sum += i;
-//            }
-//            if (!prices.isEmpty()) {
-//                int avg = (int) prices.stream().mapToInt(x -> x).average().orElse(0);
-//                System.out.println("AVG IS: " + avg);
-//                this.setPrice(avg);
-//            }
-//        } else {
-//            this.setChildren(null);
-//        }
-//    }
-//
 
     @Override
     public String toString() {
@@ -126,11 +96,11 @@ public class ShopUnit {
         this.name = name;
     }
 
-    public Date getUpdateDate() {
+    public OffsetDateTime getUpdateDate() {
         return updateDate;
     }
 
-    public void setUpdateDate(Date updateDate) {
+    public void setUpdateDate(OffsetDateTime updateDate) {
         this.updateDate = updateDate;
     }
 
@@ -156,22 +126,17 @@ public class ShopUnit {
             for (ShopUnit unit : children) {
                 if (unit.getPrice() != null) priceList.add(unit.getPrice());
             }
-            return (int)priceList.stream().mapToInt(x->x).average().getAsDouble();
+            return (int) priceList.stream().mapToInt(x -> x).average().getAsDouble();
         }
         return price;
     }
 
     public void setPrice(Integer price) {
-//        if (type == ShopUnitType.CATEGORY && !children.isEmpty()) {
-//            this.price =  (int)children.stream().mapToInt(ShopUnit::getPrice).average().getAsDouble();
-//            System.out.println("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
-//        } else {
-            this.price = price;
-//        }
+        this.price = price;
     }
 
     public List<ShopUnit> getChildren() {
-        if (type == ShopUnitType.OFFER){
+        if (type == ShopUnitType.OFFER) {
             return null;
         }
         return children;

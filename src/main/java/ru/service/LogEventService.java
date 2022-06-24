@@ -4,10 +4,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.entity.LogEventEntity;
+import ru.entity.ShopUnit;
 import ru.repository.LogEventRepository;
 
-import java.time.LocalDate;
-import java.util.Date;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Service
@@ -16,24 +16,37 @@ public class LogEventService {
     LogEventRepository logEventRepository;
 
     @Transactional
-    public void createLogChangePriceEvent(String shopUnitId, LogEventEntity.LogEventType logEventType, Integer price) {
-        LogEventEntity logEvents = new LogEventEntity();
-        logEvents.setShopUnitId(shopUnitId);
-        logEvents.setLogEventType(logEventType);
-        logEvents.setUpdatedField(price.toString());
-        logEventRepository.save(logEvents);
+    public void createLogChangePriceEvent(ShopUnit shopUnit, LogEventEntity.LogEventType logEventType) {
+        LogEventEntity logEvent = new LogEventEntity();
+        logEvent.setShopUnitId(shopUnit.getId());
+        logEvent.setName(shopUnit.getName());
+        if (shopUnit.getParentId() != null) {
+            logEvent.setParentId(shopUnit.getParentId().getId());
+        }
+        logEvent.setType(shopUnit.getType());
+        logEvent.setPrice(shopUnit.getPrice());
+        logEvent.setLogEventType(logEventType);
+        logEvent.setCreationDate(shopUnit.getUpdateDate());
+        logEventRepository.save(logEvent);
     }
 
-    @Transactional
-    public List<LogEventEntity> getLogEventsForShopUnitInThe24Hours(String shopUnitId) {
-        LocalDate date = LocalDate.now().minusDays(1);
-        List<LogEventEntity> logEvents = logEventRepository.findAllByShopUnitIdAndCreationDateAfter(shopUnitId, java.sql.Date.valueOf(date));
+    public List<LogEventEntity> getLogEventsUpdatedInThe24Hours(OffsetDateTime dateTime) {
+        List<LogEventEntity> logEvents = logEventRepository.findAllByCreationDateBetween(dateTime.minusDays(1), dateTime);
         return logEvents;
     }
 
-    @Transactional
-    public List<LogEventEntity> getLogEventsForShopUnitBetween(String shopUnitId, Date from, Date to) {
+    public List<LogEventEntity> getLogEventsForShopUnitBetween(String shopUnitId, OffsetDateTime from, OffsetDateTime to) {
         List<LogEventEntity> events = logEventRepository.findAllByShopUnitIdAndCreationDateBetween(shopUnitId, from, to);
         return events;
     }
+
+    public List<LogEventEntity> getAllLogEventsForNode(String id) {
+        return logEventRepository.findAllByShopUnitId(id);
+    }
+
+    public void deleteLogEventsByShopUnitId(String shopUnitId) {
+        logEventRepository.deleteByShopUnitId(shopUnitId);
+    }
+
+
 }
