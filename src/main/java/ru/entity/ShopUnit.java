@@ -2,18 +2,12 @@ package ru.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Data;
-import lombok.Getter;
-import lombok.ToString;
-import org.hibernate.annotations.DynamicUpdate;
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
 
 import javax.persistence.*;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 //@Getter
@@ -31,16 +25,16 @@ public class ShopUnit {
     private String name;
 
     @Column(name = "lastUpdated")
-    private OffsetDateTime updateDate;
+    private OffsetDateTime date;
 
     @JsonBackReference
     @ManyToOne(cascade = {CascadeType.PERSIST})
 //    @ManyToOne()
     @JoinColumn(name = "FK_PARENT_ID")
 //    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-    private ShopUnit parentId;
-
-//    private String parentId;
+    private ShopUnit parent;
+    @Transient
+    private String parentId;
 
     @Column(name = "type")
     private ShopUnitType type;
@@ -50,7 +44,7 @@ public class ShopUnit {
 
     @JsonManagedReference
 //    @Fetch(FetchMode.JOIN)
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "parentId", orphanRemoval = true)
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "parent", orphanRemoval = true)
 //    @JoinColumn(name = "parentUid")
 //    private List<ShopUnit> children = type == ShopUnitType.OFFER ? null : new ArrayList<>();
     private List<ShopUnit> children = new ArrayList<>();
@@ -69,7 +63,7 @@ public class ShopUnit {
         return "ShopUnit{" +
                 "id='" + id + '\'' +
                 ", name='" + name + '\'' +
-                ", updateDate=" + updateDate +
+                ", updateDate=" + date +
                 ", type=" + type +
                 ", price=" + price +
                 ", children=" + children +
@@ -96,19 +90,32 @@ public class ShopUnit {
         this.name = name;
     }
 
-    public OffsetDateTime getUpdateDate() {
-        return updateDate;
+    public String getDate() {
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX");
+        return date.withOffsetSameInstant(ZoneOffset.UTC).format(dtf);
     }
 
-    public void setUpdateDate(OffsetDateTime updateDate) {
-        this.updateDate = updateDate;
+    public void setDate(OffsetDateTime updateDate) {
+        this.date = updateDate;
     }
 
-    public ShopUnit getParentId() {
-        return parentId;
+    public ShopUnit getParent() {
+        return parent;
     }
 
-    public void setParentId(ShopUnit parentId) {
+    public void setParent(ShopUnit parentId) {
+        this.parent = parentId;
+    }
+
+    public String getParentId() {
+        if (parent != null && parent.getId() != null) {
+            return parent.getId();
+        } else {
+            return null;
+        }
+    }
+
+    public void setParentId(String parentId) {
         this.parentId = parentId;
     }
 
@@ -122,13 +129,24 @@ public class ShopUnit {
 
     public Integer getPrice() {
         if (type == ShopUnitType.CATEGORY && !children.isEmpty()) {
-            List<Integer> priceList = new ArrayList<>();
-            for (ShopUnit unit : children) {
-                if (unit.getPrice() != null) priceList.add(unit.getPrice());
+            List<Integer> priceList = getPricesForTree(this);
+            if (!priceList.isEmpty()) {
+                return (int) priceList.stream().mapToInt(x -> x).average().getAsDouble();
             }
-            return (int) priceList.stream().mapToInt(x -> x).average().getAsDouble();
         }
         return price;
+    }
+
+    private List<Integer> getPricesForTree(ShopUnit shopUnit) {
+        List<Integer> priceList = new ArrayList<>();
+        for (ShopUnit unit : shopUnit.getChildren()) {
+            if (unit.getType() == ShopUnitType.OFFER && unit.getPrice() != null){
+                priceList.add(unit.getPrice());
+            } else if (unit.getType() == ShopUnitType.CATEGORY && unit.getChildren() != null && !unit.getChildren().isEmpty()){
+                priceList.addAll(getPricesForTree(unit));
+            }
+        }
+        return priceList;
     }
 
     public void setPrice(Integer price) {

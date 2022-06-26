@@ -20,13 +20,13 @@ public class LogEventService {
         LogEventEntity logEvent = new LogEventEntity();
         logEvent.setShopUnitId(shopUnit.getId());
         logEvent.setName(shopUnit.getName());
-        if (shopUnit.getParentId() != null) {
-            logEvent.setParentId(shopUnit.getParentId().getId());
+        if (shopUnit.getParent() != null) {
+            logEvent.setParentId(shopUnit.getParent().getId());
         }
         logEvent.setType(shopUnit.getType());
         logEvent.setPrice(shopUnit.getPrice());
         logEvent.setLogEventType(logEventType);
-        logEvent.setCreationDate(shopUnit.getUpdateDate());
+        logEvent.setCreationDate(OffsetDateTime.parse(shopUnit.getDate()));
         logEventRepository.save(logEvent);
     }
 

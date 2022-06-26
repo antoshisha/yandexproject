@@ -24,8 +24,6 @@ public class ShopUnitController {
     @Autowired
     ShopUnitService shopUnitService;
     @Autowired
-    LogEventService logEventService;
-    @Autowired
     LogEventRepository logEventRepository;
 
     @PostMapping("/imports")

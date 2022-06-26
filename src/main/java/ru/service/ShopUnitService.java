@@ -83,18 +83,18 @@ public class ShopUnitService {
                 updatePrice = true;
             }
         }
-        if (unitForImport.getParentId() != null) {
-            ShopUnit parentShopUnit = shopUnitRepository.findById(unitForImport.getParentId().getId());
+        if (unitForImport.getParent() != null) {
+            ShopUnit parentShopUnit = shopUnitRepository.findById(unitForImport.getParent().getId());
             if (parentShopUnit == null || parentShopUnit.getType() != ShopUnit.ShopUnitType.CATEGORY) {
                 throw new ShopUnitVerifyException("Validation Failed!");
             }
             shopUnitRepository.save(unitForImport);
-            parentShopUnit.setUpdateDate(unitForImport.getUpdateDate());
+            parentShopUnit.setDate(OffsetDateTime.parse(unitForImport.getDate()));
             if (updatePrice) {
                 logEventService.createLogChangePriceEvent(parentShopUnit, LogEventEntity.LogEventType.PRICE_UPDATE);
             }
             shopUnitRepository.save(parentShopUnit);
-            if (parentShopUnit.getParentId() != null) {
+            if (parentShopUnit.getParent() != null) {
                 updateNode(parentShopUnit, updatePrice);
             }
         }

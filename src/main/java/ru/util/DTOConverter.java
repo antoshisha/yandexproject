@@ -10,9 +10,7 @@ import ru.repository.ShopUnitRepository;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Component
 public class DTOConverter {
@@ -24,8 +22,8 @@ public class DTOConverter {
         ShopUnit unit = new ShopUnit();
         unit.setId(unitImportDTO.getId());
         unit.setName(unitImportDTO.getName());
-        unit.setParentId(unitImportDTO.getParentId());
-        unit.setUpdateDate(dateTime);
+        unit.setParent(unitImportDTO.getParentId());
+        unit.setDate(dateTime);
         unit.setType(unitImportDTO.getType());
         unit.setPrice(unitImportDTO.getPrice());
         return unit;
