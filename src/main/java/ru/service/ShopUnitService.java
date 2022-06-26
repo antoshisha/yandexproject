@@ -66,7 +66,6 @@ public class ShopUnitService {
         if (shopUnit == null) {
             throw new ShopUnitNotFoundException("Item not found");
         }
-//        return processNodeForResponse(shopUnit);
         return shopUnit;
     }
 
@@ -162,21 +161,5 @@ public class ShopUnitService {
         boolean isValidUuid = Pattern.matches("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", id);
         return isValidUuid;
     }
-
-    private ShopUnit processNodeForResponse(ShopUnit shopUnit) {
-        if (shopUnit.getChildren().isEmpty()) {
-            if (shopUnit.getType() == ShopUnit.ShopUnitType.OFFER) {
-                shopUnit.setChildren(null);
-            }
-        } else {
-            shopUnit.getChildren().forEach(this::processNodeForResponse);
-        }
-        if (shopUnit.getType() == ShopUnit.ShopUnitType.CATEGORY) {
-            Integer avgPrice = (int) shopUnit.getChildren().stream().mapToInt(ShopUnit::getPrice).average().getAsDouble();
-            shopUnit.setPrice(avgPrice);
-        }
-        return shopUnit;
-    }
-
 
 }

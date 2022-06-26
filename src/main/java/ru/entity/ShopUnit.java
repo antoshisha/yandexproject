@@ -10,12 +10,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-//@Getter
-//@Data
 @Entity
-//@ToString
 @Table(name = "shop_unit")
-//@DynamicUpdate
 public class ShopUnit {
     @Id
     @Column(name = "id", nullable = false)
@@ -43,10 +39,7 @@ public class ShopUnit {
     private Integer price;
 
     @JsonManagedReference
-//    @Fetch(FetchMode.JOIN)
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "parent", orphanRemoval = true)
-//    @JoinColumn(name = "parentUid")
-//    private List<ShopUnit> children = type == ShopUnitType.OFFER ? null : new ArrayList<>();
     private List<ShopUnit> children = new ArrayList<>();
 
 
